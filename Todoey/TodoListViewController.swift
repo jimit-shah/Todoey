@@ -8,17 +8,14 @@
 
 import UIKit
 
-class TodoListViewController: UITableViewController {
+// MARK: - TodoListViewController: UITableViewController
 
+class TodoListViewController: UITableViewController {
+  
+  // MARK: Properties
+  
   var itemArray = ["Find Mike", "Buy Eggos", "Destroy Demogorgon"]
-  
-  
-  override func viewDidLoad() {
-    super.viewDidLoad()
-   
-    
-  }
-  
+  let defaults = UserDefaults.standard
   
   // MARK: Actions
   
@@ -28,9 +25,8 @@ class TodoListViewController: UITableViewController {
     
     let alert = UIAlertController(title: "Add New Todo Item", message: nil, preferredStyle: .alert)
     
-    let action = UIAlertAction(title: "Add ", style: .default) { action in
-      self.itemArray.append(textField.text!)
-      self.tableView.reloadData()
+    let action = UIAlertAction(title: "Add Item", style: .default) { action in
+      self.addNewItem(with: textField.text!)
     }
     
     alert.addTextField { alertTextField in
@@ -42,8 +38,27 @@ class TodoListViewController: UITableViewController {
     
     present(alert, animated: true, completion: nil)
   }
-
-
+  
+  // MARK: Lifecycle
+  
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    
+    if let items = defaults.array(forKey: "TodoListArray") as? [String] {
+      itemArray = items
+    }
+  }
+  
+  // MARK: Helper Methods
+  
+  private func addNewItem(with string: String) {
+    if string.isEmpty {
+      return
+    }
+    itemArray.append(string.capitalized)
+    defaults.set(itemArray, forKey: "TodoListArray")
+    tableView.reloadData()
+  }
 }
 
 // MARK: - Tableview Datasource Methods
@@ -59,18 +74,20 @@ extension TodoListViewController {
     cell.textLabel?.text = itemArray[indexPath.row]
     return cell
   }
+}
 
 // MARK: - Tableview Delegates Methods
 
-
+extension TodoListViewController {
+  
   override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
     
     if let cell = tableView.cellForRow(at: indexPath) {
       cell.accessoryType = (cell.accessoryType == .none) ? .checkmark : .none
     }
-    
     tableView.deselectRow(at: indexPath, animated: true)
   }
+  
 }
 
 
