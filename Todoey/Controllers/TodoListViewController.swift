@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import CoreData
 
 // MARK: - TodoListViewController: UITableViewController
 
@@ -15,7 +16,9 @@ class TodoListViewController: UITableViewController {
   // MARK: Properties
   
   var itemArray = [Item]()
-  let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+  
+  let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+  
   
   // MARK: Actions
   
@@ -43,8 +46,8 @@ class TodoListViewController: UITableViewController {
   
   override func viewDidLoad() {
     super.viewDidLoad()
-    
-    print(dataFilePath)
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    print(dataFilePath!)
     
     loadItems()
     
@@ -56,33 +59,33 @@ class TodoListViewController: UITableViewController {
     if string.isEmpty {
       return
     }
-    let newItem = Item()
-    newItem.title = string.capitalized
-    itemArray.append(newItem)
-    saveItems()
     
+    let newItem = Item(context: context)
+    newItem.title = string.capitalized
+    newItem.done = false
+    itemArray.append(newItem)
+    
+    saveItems()
   }
   
+  // MARK: Model Manupulation Methods
+  
   func saveItems() {
-    let encoder = PropertyListEncoder()
     do {
-      let data = try encoder.encode(itemArray)
-      try data.write(to: dataFilePath!)
+      try context.save()
     } catch {
-      print("Error encoding item array, \(error)")
+      print("Error saving context, \(error)")
     }
-    
     tableView.reloadData()
   }
   
+  
   func loadItems() {
-    if let data = try? Data(contentsOf: dataFilePath!) {
-      let decoder = PropertyListDecoder()
-      do {
-      itemArray = try decoder.decode([Item].self, from: data)
-      } catch {
-        print("Error decoding items from plist, \(error)")
-      }
+    let request: NSFetchRequest<Item> = Item.fetchRequest()
+    do {
+      itemArray = try context.fetch(request)
+    } catch {
+      print("Error fetching data from context, \(error)")
     }
   }
   
@@ -119,6 +122,21 @@ extension TodoListViewController {
     saveItems()
     
     tableView.deselectRow(at: indexPath, animated: true)
+  }
+  
+  override func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
+    
+    let delete = UITableViewRowAction(style: .destructive, title: "Delete") { action, indexPath in
+      
+      // delete item at indexPath
+      self.context.delete(self.itemArray[indexPath.row])
+      self.itemArray.remove(at: indexPath.row)
+      tableView.deleteRows(at: [indexPath], with: .fade)
+      
+      self.saveItems()
+    }
+    
+    return [delete]
   }
   
 }
