@@ -52,7 +52,6 @@ class TodoListViewController: UITableViewController {
     super.viewDidLoad()
     let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
     print(dataFilePath)
-    
   }
   
   // MARK: Helper Methods
@@ -132,10 +131,10 @@ extension TodoListViewController {
     
     tableView.deselectRow(at: indexPath, animated: true)
   }
-  
-  override func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
-    
-    let delete = UITableViewRowAction(style: .destructive, title: "Delete") { action, indexPath in
+
+  override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+
+    let action = UIContextualAction(style: .destructive, title: "Delete") { action, view, completionHandler in
       
       // delete item at indexPath
       self.context.delete(self.itemArray[indexPath.row])
@@ -143,9 +142,12 @@ extension TodoListViewController {
       tableView.deleteRows(at: [indexPath], with: .fade)
       
       self.saveItems()
+      completionHandler(true)
     }
+//    action.image = #imageLiteral(resourceName: "trash")
     
-    return [delete]
+    let configuration = UISwipeActionsConfiguration(actions: [action])
+    return configuration
   }
   
 }
